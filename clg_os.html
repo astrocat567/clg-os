@@ -216,7 +216,7 @@ DB.catch(()=>{});
 /* ---------- helpers ---------- */
 let N=ld('nt',[]),DND=ld('dnd',false),TH=ld('theme','auto'),PIN=ld('pins',{d:[],b:[]}),WD=ld('wd',{});
 /* ---------- v2: debug, specs, tags, movable icons ---------- */
-const VER='2.3';
+const VER='2.4';
 let DBG=ld('dbg',false),HUD=ld('hud',false),TG=ld('tags',{}),DP=ld('dpos',{}),CW=[],ACC=ld('acc',''),LOGS=[],WS=ld('ws',{}),WSEL='clock',GO=null,BKF=true,FM=false,FKC=0,FK=ld('fk',{k:'F9',c:0,a:0,s:0}),TF='',SR=null,dbgUp=null,dT=0;
 function dlog(l,m,s){LOGS.push({t:Date.now(),l,m:String(m),s:s||'os'});if(LOGS.length>500)LOGS.shift();if(dbgUp&&!dT)dT=setTimeout(()=>{dT=0;dbgUp&&dbgUp()},250)}
 const fmt=a=>a.map(x=>{try{return typeof x=='object'&&x?(x instanceof Error?x.stack||x.message:JSON.stringify(x)):String(x)}catch(e){return String(x)}}).join(' ');
@@ -293,7 +293,7 @@ function wpage(){const n=WSEL,o=wc(n),K=n+'.',W='data-wk',
  return h+'<div class="row" style="margin-top:16px"><button class="pb" data-a="wrst">Reset this widget</button></div>'}
 /* updates from GitHub */
 const UPD_REPO='astrocat567/clg-os';
-let UP={file:'clg_os.html',ch:'rel',auto:1,last:0,...ld('upd',{}),repo:UPD_REPO},US={st:'idle'};
+let UP={file:'clg_os.html',ch:'rel',auto:1,last:0,bk:0,...ld('upd',{}),repo:UPD_REPO},US={st:'idle'};
 const vn=x=>String(x).replace(/^v/i,'').split(/[.-]/).map(n=>parseInt(n)||0),
 vgt=(a,b)=>{const x=vn(a),y=vn(b);for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]||0)-(y[i]||0);if(d)return d>0}return false};
 async function checkUpd(man){
@@ -320,8 +320,8 @@ async function saveUpd(m){
   await h.requestPermission({mode:'readwrite'});
   const cur=await(await h.getFile()).text();
   if(!cur.includes("const VER='")||!/clg os/i.test(cur))return toast('That doesn’t look like a clg os file. Nothing was changed.');
-  if(!confirm('Replace '+h.name+' with clg os '+US.v+'?\n\nYour settings, apps and wallpapers are kept. A backup of the old file is downloaded first.'))return;
-  const a=E('a');a.href=URL.createObjectURL(new Blob([cur],{type:'text/html'}));a.download='clg_os-'+VER+'-backup.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1e4);
+  if(!confirm('Replace '+h.name+' with clg os '+US.v+'?\n\nYour settings, apps and wallpapers are kept. '+(UP.bk?' A backup of the old file is downloaded first.':'')))return;
+  if(UP.bk){const a=E('a');a.href=URL.createObjectURL(new Blob([cur],{type:'text/html'}));a.download='clg_os-'+VER+'-backup.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1e4)}
   const w=await h.createWritable();await w.write(t);await w.close();
   S.cc=0;dlog('log','Updated '+h.name+' from '+VER+' to '+US.v);toast('Updated to '+US.v+'. Reloading…');setTimeout(()=>location.reload(),900)
  }catch(e){if(e.name!='AbortError')toast('Couldn’t update the file: '+(e.message||e))}}
@@ -333,7 +333,7 @@ function upage(){const s=US.st,u=(k,l,d,w)=>`<label class="sw"><span>${l}<small>
  return o+'<div class="row" style="margin:12px 0"><button class="pb'+(s=='new'?'':' p')+'" data-a="upchk"'+(s=='checking'?' disabled':'')+'>Check for updates</button></div>'+kv([['Installed version',VER],['Update source',UP.repo||'not set'],['Last checked',UP.last?new Date(UP.last).toLocaleString():'never']])
  +'<h4>Update source</h4><p>Updates always come from <b>github.com/'+UPD_REPO+'</b>.</p><div class="row" style="margin-bottom:8px"><button class="pb" data-a="uprepo">Open the repository</button></div>'+u('file','File in the repository','The clg os file to download. If it isn’t there, index.html is tried too.')
  +'<label class="sw"><span>Look for updates in</span><select data-uk="ch"><option value="rel"'+(UP.ch=='rel'?' selected':'')+'>Latest release</option><option value="main"'+(UP.ch=='main'?' selected':'')+'>Main branch</option></select></label>'
- +sw('upauto','Check automatically',UP.auto,'Looks when clg os starts, at most twice a day.')
+ +sw('upauto','Check automatically',UP.auto,'Looks when clg os starts, at most twice a day.')+sw('upbk','Download a backup when installing in place',UP.bk,'Saves a copy of your current clg os file first, so you can go back. Off by default.')
  +'<p>Every new version must raise <code>const VER</code> in the file. A release uses the file as it was tagged. The main branch uses the newest commit.</p>'}
 function setDbg(v){DBG=v;sv('dbg',v);dlog('warn','Debug mode '+(v?'on':'off'));if(!v)wins.filter(w=>w.a.dev).forEach(kill);mkApps();hudUp();SR&&SR()}
 const rowsN=()=>Math.max(1,Math.floor(($('#icons').clientHeight-10)/96)),colsN=()=>Math.max(1,Math.floor(($('#icons').clientWidth-10)/92));
@@ -638,7 +638,7 @@ ACT={
  expc:()=>expCache(),fkey:()=>{FKC=FKC?0:1;SR&&SR()},fm:()=>setFM(1),uprepo:()=>window.open('https://github.com/'+UPD_REPO,'_blank','noopener'),upchk:()=>checkUpd(1),updl:()=>saveUpd('dl'),upin:()=>saveUpd('inplace'),uprl:()=>saveUpd('reload'),wsel:b=>{WSEL=b.dataset.n;SR&&SR()},wclr:b=>{setW(b.dataset.wk,'');SR&&SR()},wrst:()=>{delete WS[WSEL];delete WD[WSEL];sv('ws',WS);const c=wcard(WSEL);c.classList.contains('dw')&&pinW(c,0);applyW();tick();wx();rl();sys();SR&&SR()},ldc:()=>$('#fc').click(),
  dbgapp:()=>{const a=apps.find(x=>x.name=='Debug');a&&launch(a)}
 },
-CHG={dnd:t=>setDnd(t.checked),max:t=>{S.max=t.checked;sv('max',S.max)},cc:t=>{S.cc=t.checked;sv('cc',S.cc)},th:t=>setTheme(t.value,1),dbg:t=>setDbg(t.checked),hud:t=>{HUD=t.checked;sv('hud',HUD);hudUp()},bkf:t=>{BKF=t.checked},upauto:t=>{UP.auto=t.checked?1:0;sv('upd',UP)}};
+CHG={dnd:t=>setDnd(t.checked),max:t=>{S.max=t.checked;sv('max',S.max)},cc:t=>{S.cc=t.checked;sv('cc',S.cc)},th:t=>setTheme(t.value,1),dbg:t=>setDbg(t.checked),hud:t=>{HUD=t.checked;sv('hud',HUD);hudUp()},bkf:t=>{BKF=t.checked},upauto:t=>{UP.auto=t.checked?1:0;sv('upd',UP)},upbk:t=>{UP.bk=t.checked?1:0;sv('upd',UP)}};
 function settings(bd){
  const el=E('div','s10','<div class="hd"><button class="bk" title="Back">←</button><b>Settings</b></div><div class="ct"></div>'),ct=el.lastChild,bk=el.querySelector('.bk');let c=-1,s=0;
  const CT=[['System','🖥️','Notifications, windows, about this PC',['Notifications','Windows','About']],['Personalization','🎨','Background, colors, desktop icons, widgets',['Background','Colors','Desktop icons','Widgets']],['Apps','🧩','Installed apps, tags, Apps folder',['Apps & features']],['For developers','🛠️','Debug mode, indev apps, overlay',['Debug mode']],['Update & recovery','🔄','Check for updates on GitHub, backup and restore',['Update','Backup & restore']]];
