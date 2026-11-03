@@ -1,0 +1,3 @@
+Genre: Rougelike, Plinko
+
+Developer: MogDogBog
